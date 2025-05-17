@@ -38,8 +38,13 @@ void AbstractUser::toConnect(ConnectionPool* _pConnectPool)
 			[&]() -> void {
 				if (_Connection == nullptr)
 				{
-					// 每5秒判断一次行为
-					std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+					clock_t begin = clock();
+					// 如果5秒内申请没有申请到连接，且想要退出，就退出排队
+					while (clock() - begin < 5000 && _Connection == nullptr)
+					{
+						std::this_thread::sleep_for(std::chrono::milliseconds(1));
+					}
+					
 					if (_Connection == nullptr && _waiting)
 					{
 						if (_exitOrNot == 1)

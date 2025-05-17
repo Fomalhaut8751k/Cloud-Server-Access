@@ -430,3 +430,42 @@
 	    return sp;
     }
     ```
+<br>
+
+- ### 用户尝试退出排队的时机判断
+
+    ```cpp
+    thread t0(
+		[&]() -> void {
+			_Connection = _pConnectPool->getConnection(this);
+		}
+	);
+	if (_Connection == nullptr)
+	{
+		thread t1(
+			[&]() -> void {
+				if (_Connection == nullptr)
+				{
+					// 每5秒判断一次行为
+					std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+					...
+				}
+			}
+		);
+		// 如果申请到连接了还没有退出排队
+		t1.join();
+		t0.join();
+	}
+    ```
+    这是用户发起连接申请后的逻辑，虽然申请和判断实在两个不同的线程但是，这样会导致用户一定会走完这5秒后进行判定，而不是期间申请到连接就直接跳出，所以从实验结果来看，当_initSize足够大，大到每一个用户进来都可以直接申请连接时，这时候总的耗时都是15000ms往上一点，即这5s以及申请到连接后的不操作10s等待系统回收连接。
+
+    ### 通过计时解决：
+    ```cpp
+    clock_t begin = clock();
+    // 如果5秒内申请没有申请到连接，且想要退出，就退出排队
+    while (clock() - begin < 5000 && _Connection == nullptr)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    ```
+    <img src='img/5.png'>

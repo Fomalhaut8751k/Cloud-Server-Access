@@ -77,13 +77,13 @@ int main()
     // ###### 普通用户和vip用户 ###############################################################
 #if 1
     vector<int> _vecUserType;
-    int arr[20] = {};
-    for (int i = 0; i < 20; i++)
+    int arr[200] = {};
+    for (int i = 0; i < 200; i++)
     {
         arr[i] = rand() % 2;
     }
 
-    for (int i = 0; i < 20; ++i)
+    for (int i = 0; i < 200; ++i)
     {
         // 0表示普通用户，1表示vip用户
         int _userType = rand() % 2;
